@@ -43,7 +43,7 @@
         </el-col>
         <el-col :span="12">
           <el-image v-if="loginImage !== ''" class="login-image" :src="loginImage" />
-          <el-image v-else class="login-image" :src="require('@/assets/KobeOperator-login.jpg')" />
+          <el-image v-else class="login-image" :src="require('@/assets/ClusterOperator-login.jpg')" />
         </el-col>
       </el-row>
     </div>

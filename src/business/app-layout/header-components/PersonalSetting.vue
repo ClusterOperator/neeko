@@ -25,7 +25,7 @@
             :visible.sync="aboutDialogVisible"
             width="40%">
       <div class="aboutBackground" style="padding: 20px 25px;">
-        <el-image v-if="logoAbout === ''" :src="require('@/assets/KubeOperator-red.png')" class="sidebar-logo"/>
+        <el-image v-if="logoAbout === ''" :src="require('@/assets/ClusterOperator-red.png')" class="sidebar-logo"/>
         <el-image v-else :src="logoAbout" class="sidebar-logo"/>
         <p style="color: #242e42;">{{ systemName }} {{ $t("commons.personal.ko_introduction") }}</p>
         <strong>{{ $t("commons.personal.version") }}: v3.7.0</strong>

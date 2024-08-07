@@ -10,7 +10,7 @@
           </el-form-item>
 
           <el-form-item style="width: 100%;margin-top: 20px" :label="$t('theme.login_image')" required>
-            <el-image v-if="form.loginImage === ''" :src="require('@/assets/KobeOperator-login.jpg')" style="width: 20%" />
+            <el-image v-if="form.loginImage === ''" :src="require('@/assets/ClusterOperator-login.jpg')" style="width: 20%" />
             <el-image v-else :src="form.loginImage" style="width: 20%" />
             <div><span class="input-help">{{$t('theme.login_image_help')}}</span></div>
             <el-upload :on-change="(file, fileList) => {handleChange(file, fileList, 'loginImage')}" :auto-upload="false" class="upload-demo" :multiple="false" action="" :file-list="loginImages">
@@ -21,7 +21,7 @@
           </el-form-item>
 
           <el-form-item style="width: 100%;margin-top: 20px" :label="$t('theme.logo')" required>
-            <el-image v-if="form.logo === ''" :src="require('@/assets/KubeOperator-assist-white.png')" style="width: 5%;background-color: #4A4B4D" />
+            <el-image v-if="form.logo === ''" :src="require('@/assets/ClusterOperator-assist-white.png')" style="width: 5%;background-color: #4A4B4D" />
             <el-image v-else :src="form.logo" style="width: 10%;background-color: #4A4B4D" />
             <div><span class="input-help">{{$t('theme.logo_help')}}</span></div>
             <el-upload :on-change="(file, fileList) => {handleChange(file, fileList, 'logo')}" :auto-upload="false" class="upload-demo" :multiple="false" action="" :file-list="logos">
@@ -32,7 +32,7 @@
           </el-form-item>
 
           <el-form-item style="width: 100%;margin-top: 20px" :label="$t('theme.logo_with_text')" required>
-            <el-image v-if="form.logoWithText === ''" :src="require('@/assets/KubeOperator-white.png')" style="width: 25%;background-color: #4A4B4D" />
+            <el-image v-if="form.logoWithText === ''" :src="require('@/assets/ClusterOperator-white.png')" style="width: 25%;background-color: #4A4B4D" />
             <el-image v-else :src="form.logoWithText" style="width: 30%;background-color: #4A4B4D" />
             <div><span class="input-help">{{$t('theme.logo_with_text_help')}}</span></div>
             <el-upload :on-change="(file, fileList) => {handleChange(file, fileList, 'logoWithText')}" :auto-upload="false" class="upload-demo" :multiple="false" action="" :file-list="logoWithTexts">
@@ -43,7 +43,7 @@
           </el-form-item>
 
           <el-form-item style="width: 100%;margin-top: 20px" :label="$t('theme.logo_about')" required>
-            <el-image v-if="form.logoAbout === ''" :src="require('@/assets/KubeOperator-red.png')" style="width: 25%;" />
+            <el-image v-if="form.logoAbout === ''" :src="require('@/assets/ClusterOperator-red.png')" style="width: 25%;" />
             <el-image v-else :src="form.logoAbout" style="width: 30%;" />
             <div><span class="input-help">{{$t('theme.logo_about_help')}}</span></div>
             <el-upload :on-change="(file, fileList) => {handleChange(file, fileList, 'logoAbout')}" :auto-upload="false" class="upload-demo" :multiple="false" action="" :file-list="logoAbouts">
@@ -54,7 +54,7 @@
           </el-form-item>
 
           <el-form-item style="width: 100%;margin-top: 20px" :label="$t('theme.icon')" required>
-            <el-image v-if="form.icon === ''" :src="require('@/assets/KubeOperator-assist-white.png')" style="width: 3%" />
+            <el-image v-if="form.icon === ''" :src="require('@/assets/ClusterOperator-assist-white.png')" style="width: 3%" />
             <el-image v-else :src="form.icon" style="width: 3%" />
             <div><span class="input-help">{{$t('theme.icon_help')}}</span></div>
             <el-upload :on-change="(file, fileList) => {handleChange(file, fileList, 'icon')}" :auto-upload="false" class="upload-demo" :multiple="false" action="" :file-list="icons">

@@ -3,11 +3,11 @@
     <transition name="sidebar-logo-fade" mode="out-in">
       <router-link v-if="collapse" key="collapse" class="sidebar-logo-link" to="/">
         <img v-if="logo !== ''" :src="logo" class="sidebar-logo" alt="Sidebar Logo">
-        <img v-else :src="require('@/assets/KubeOperator-assist-white.png')" class="sidebar-logo" alt="Sidebar Logo">
+        <img v-else :src="require('@/assets/ClusterOperator-assist-white.png')" class="sidebar-logo" alt="Sidebar Logo">
       </router-link>
       <router-link v-else key="expand" class="sidebar-logo-link" to="/">
         <img v-if="logoWithText !== ''" :src="logoWithText" class="sidebar-logo" alt="Sidebar Logo">
-        <img  v-else :src="require('@/assets/KubeOperator-white.png')" class="sidebar-logo" alt="Sidebar Logo">
+        <img  v-else :src="require('@/assets/ClusterOperator-white.png')" class="sidebar-logo" alt="Sidebar Logo">
       </router-link>
     </transition>
   </div>
@@ -37,8 +37,8 @@ export default {
   },
   data() {
     return {
-      logoWithText: require("@/assets/KubeOperator-white.png"),
-      logo: require("@/assets/KubeOperator-assist-white.png"),
+      logoWithText: require("@/assets/ClusterOperator-white.png"),
+      logo: require("@/assets/ClusterOperator-assist-white.png"),
     }
   },
 }
