@@ -1,0 +1,767 @@
+<template>
+  <layout-content :header="$t('commons.button.create')" :back-to="{ name: 'ZoneList' }">
+    <el-row>
+      <el-col :span="4"><br/></el-col>
+      <el-col :span="10">
+        <div class="grid-content bg-purple-light">
+          <el-form ref="form" label-width="200px" :model="form" :rules="rules" v-loading="loading"
+                   label-position="left">
+            <el-form-item :label="$t('commons.table.name')" prop="name">
+              <el-input v-model="form.name"></el-input>
+              <div><span class="input-help">{{ $t("commons.validate.name_help") }}</span></div>
+            </el-form-item>
+            <el-form-item :label="$t('automatic.region.name')" prop="regionName">
+              <el-select v-model="form.regionName"
+                         filterable style="width:100%"
+                         reserve-keyword
+                         size="medium"
+                         @change="changeRegion(form.regionName)">
+                <el-option
+                        v-for="(item,index) in regions"
+                        :key="index"
+                        :label="item.name"
+                        :value="item.name">
+                </el-option>
+              </el-select>
+            </el-form-item>
+            <div v-if="region.regionVars['provider'] === 'vSphere'">
+              <el-divider content-position="left">{{ $t("automatic.zone.compute") }}</el-divider>
+              <el-form-item :label="$t('automatic.zone.resource_pool')" prop="cloudVars.resource">
+                <el-select v-model="form.cloudVars.resource"
+                           filterable style="width:100%"
+                           reserve-keyword
+                           size="medium"
+                           @change="changeResourcePool()">
+                  <el-option
+                          v-for="(item,index) in resourcePools"
+                          :key="index"
+                          :label="item"
+                          :value="item">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item :label="$t('automatic.zone.host')"
+                            prop="cloudVars.hostSystem">
+                <el-select v-model="form.cloudVars.hostSystem"
+                           filterable style="width:100%"
+                           size="medium"
+                           reserve-keyword
+                           @change="changeHost(form.cloudVars.hostSystem)">
+                  <el-option :label="'Any'" :value="'Any'"></el-option>
+                  <el-option
+                          v-for="(item,index) in cloudZone.hosts"
+                          :key="index"
+                          :label="item"
+                          :value="item">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-divider content-position="left">{{ $t("automatic.zone.datastore") }}</el-divider>
+              <el-form-item :label="$t('automatic.zone.datastore_type')"
+                            prop="cloudVars.datastoreType">
+                <el-radio-group v-model="form.cloudVars.datastoreType">
+                  <el-radio label="value">{{ $t("automatic.zone.value") }}</el-radio>
+                  <el-radio label="usage">{{ $t("automatic.zone.usage") }}</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item :label="$t('automatic.zone.datastore')" prop="cloudVars.datastore">
+                <el-select v-model="form.cloudVars.datastore"
+                           multiple
+                           filterable style="width:100%"
+                           size="medium"
+                           reserve-keyword>
+                  <el-option
+                          v-for="(item,index) in cloudDatastores"
+                          :key="index"
+                          :label="item"
+                          :value="item">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-divider content-position="left">{{ $t("automatic.zone.template") }}</el-divider>
+              <el-form-item :label="$t('automatic.zone.template_type')"
+                            prop="cloudVars.templateType">
+                <el-radio-group v-model="form.cloudVars.templateType">
+                  <el-radio v-for="(item,index) in templateTypes" :label="item.value" :key="index"
+                            @change="changeTemplateType(item.value)">
+                    {{
+                      item.label
+                    }}
+                  </el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <div v-if="form.cloudVars['templateType']==='customize'">
+                <el-form-item :label="$t('automatic.zone.template')" prop="cloudVars.imageName">
+                  <el-select v-model="form.cloudVars.imageName"
+                             filterable style="width:100%"
+                             reserve-keyword
+                             size="medium"
+                             @change="changeTemplate(form.cloudVars.imageName)">
+                    <el-option
+                            v-for="(item,index) in cloudTemplates"
+                            :key="index"
+                            :label="item.imageName"
+                            :value="item.imageName">
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+              </div>
+              <div v-if="form.cloudVars['templateType']==='template_config'">
+                <el-form-item :label="$t('automatic.zone.template')" prop="cloudVars.templateConfig">
+                  <el-select v-model="form.cloudVars.templateConfig"
+                             filterable style="width:100%"
+                             reserve-keyword
+                             size="medium"
+                             @change="changeTemplateConfig(form.cloudVars.templateConfig)">
+                    <el-option
+                            v-for="(item,index) in templateConfigs"
+                            :key="index"
+                            :label="item.name"
+                            :value="item.name">
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+              </div>
+              <div v-if="form.cloudVars['templateType']==='customize' || form.cloudVars['templateType']==='template_config'">
+                <el-form-item :label="$t('credential.credential')" prop="credentialName">
+                  <el-select v-model="form.credentialName"
+                             filterable style="width:100%"
+                             size="medium"
+                             reserve-keyword>
+                    <el-option
+                            v-for="(item,index) in credentials"
+                            :key="index"
+                            :label="item.name"
+                            :value="item.name">
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item :label="$t('automatic.zone.port')" prop="cloudVars.port">
+                  <el-input v-model="form.cloudVars.port" type="number"></el-input>
+                </el-form-item>
+              </div>
+              <el-divider content-position="left">{{ $t("automatic.zone.network") }}</el-divider>
+              <el-form-item :label="$t('automatic.zone.network_adapter')" prop="cloudVars.network">
+                <el-select v-model="form.cloudVars.network"
+                           filterable style="width:100%"
+                           size="medium"
+                           reserve-keyword>
+                  <el-option
+                          v-for="(item,index) in networks"
+                          :key="index"
+                          :label="item"
+                          :value="item">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item :label="$t('automatic.ip_pool.name')" prop="ipPoolName">
+                <el-select v-model="form.ipPoolName"
+                           filterable style="width:100%"
+                           size="medium"
+                           @change="changeIpPool()"
+                           reserve-keyword>
+                  <el-option
+                          v-for="(item,index) in ipPools"
+                          :key="index"
+                          :label="item.name + ' (' +item.subnet + ')' + ' [ ' + item.ipUsed + ' / ' + item.ips.length + ' ]'"
+                          :value="item.name">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+            </div>
+            <div v-if="region.regionVars['provider'] === 'OpenStack'">
+              <el-divider content-position="left"> {{ $t("automatic.zone.compute") }}</el-divider>
+              <el-form-item :label="$t('automatic.zone.cluster')" prop="cloudVars.cluster">
+                <el-select v-model="form.cloudVars.cluster"
+                           filterable style="width:100%"
+                           reserve-keyword
+                           size="medium"
+                           @change="changeCloudZone(form.cloudVars.cluster)">
+                  <el-option
+                          v-for="(item,index) in cloudZones"
+                          :key="index"
+                          :label="item.cluster"
+                          :value="item.cluster">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-divider content-position="left">{{ $t("automatic.zone.datastore") }}</el-divider>
+              <el-form-item :label="$t('automatic.zone.storageType')" prop="cloudVars.storageType">
+                <el-select v-model="form.cloudVars.storageType"
+                           filterable style="width:100%"
+                           size="medium"
+                           reserve-keyword>
+                  <el-option
+                          v-for="(item,index) in cloudZone.storages"
+                          :key="index"
+                          :label="item.name"
+                          :value="item.id">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-divider content-position="left">{{ $t("automatic.zone.template") }}</el-divider>
+              <el-form-item :label="$t('automatic.zone.template_type')"
+                            prop="cloudVars.templateType">
+                <el-radio-group v-model="form.cloudVars.templateType">
+                  <el-radio label="default">{{ $t("automatic.zone.default") }}</el-radio>
+                  <el-radio label="customize" @change="changeTemplateType('customize')">
+                    {{ $t("automatic.zone.customize") }}
+                  </el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <div v-if="form.cloudVars['templateType']==='customize'">
+                <el-form-item :label="$t('automatic.zone.template')" prop="cloudVars.templateConfig">
+                  <el-select v-model="form.cloudVars.templateConfig"
+                             filterable style="width:100%"
+                             reserve-keyword
+                             size="medium"
+                             @change="changeTemplate(form.cloudVars.imageName)">
+                    <el-option
+                            v-for="(item,index) in cloudTemplates"
+                            :key="index"
+                            :label="item.imageName"
+                            :value="item.imageName">
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item :label="$t('credential.credential')" prop="credentialName">
+                  <el-select v-model="form.credentialName"
+                             filterable style="width:100%"
+                             size="medium"
+                             reserve-keyword>
+                    <el-option
+                            v-for="(item,index) in credentials"
+                            :key="index"
+                            :label="item.name"
+                            :value="item.name">
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item :label="$t('automatic.zone.port')" prop="cloudVars.port">
+                  <el-input v-model="form.cloudVars.port" type="number"></el-input>
+                </el-form-item>
+              </div>
+              <el-divider content-position="left">{{ $t("automatic.zone.network") }}</el-divider>
+              <el-form-item :label="$t('automatic.zone.security_group')"
+                            prop="cloudVars.securityGroup">
+                <el-select v-model="form.cloudVars.securityGroup"
+                           filterable style="width:100%"
+                           size="medium"
+                           reserve-keyword>
+                  <el-option
+                          v-for="(item,index) in cloudZone.securityGroups"
+                          :key="index"
+                          :label="item"
+                          :value="item">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item :label="$t('automatic.zone.network')" prop="cloudVars.network">
+                <el-select v-model="form.cloudVars.network"
+                           filterable style="width:100%"
+                           reserve-keyword
+                           size="medium"
+                           @change="changeNetwork(form.cloudVars.network)">
+                  <el-option
+                          v-for="(item,index) in cloudZone.networkList"
+                          :key="index"
+                          :label="item.name"
+                          :value="item.name">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item :label="$t('automatic.zone.ip_type')" prop="cloudVars.ipType">
+                <el-select v-model="form.cloudVars.ipType"
+                           filterable style="width:100%"
+                           size="medium"
+                           reserve-keyword>
+                  <el-option
+                          v-for="(item,index) in cloudZone.ipTypes"
+                          :key="index"
+                          :label="item"
+                          :value="item">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item :label="$t('automatic.zone.subnet')" prop="cloudVars.subnet"
+                            v-if="form.cloudVars.ipType==='private'">
+                <el-select v-model="form.cloudVars.subnet"
+                           filterable style="width:100%"
+                           size="medium"
+                           reserve-keyword>
+                  <el-option
+                          v-for="(item,index) in subnetList"
+                          :key="index"
+                          :label="item.name"
+                          :value="item.id">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item :label="$t('automatic.zone.floating_ip')"
+                            prop="cloudVars.floatingNetwork"
+                            v-if="form.cloudVars.ipType==='floating'">
+                <el-select v-model="form.cloudVars.floatingNetwork"
+                           filterable style="width:100%"
+                           size="medium"
+                           reserve-keyword>
+                  <el-option
+                          v-for="(item,index) in cloudZone.floatingNetworkList"
+                          :key="index"
+                          :label="item.name"
+                          :value="item.name">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item :label="$t('automatic.ip_pool.name')" prop="ipPoolName">
+                <el-select v-model="form.ipPoolName"
+                           filterable style="width:100%"
+                           size="medium"
+                           @change="changeIpPool()"
+                           reserve-keyword>
+                  <el-option
+                          v-for="(item,index) in ipPools"
+                          :key="index"
+                          :label="item.name + ' (' +item.subnet + ')' + ' [ ' + item.ipUsed + ' / ' + item.ips.length + ' ]'"
+                          :value="item.name">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+            </div>
+            <div v-if="region.regionVars['provider'] === 'FusionCompute'">
+              <el-divider content-position="left">{{ $t("automatic.zone.compute") }}</el-divider>
+              <el-form-item :label="$t('automatic.zone.cluster')" prop="cloudVars.cluster">
+                <el-select v-model="form.cloudVars.cluster"
+                           filterable style="width:100%"
+                           size="medium"
+                           reserve-keyword
+                           @change="changeCloudZone(form.cloudVars.cluster)">
+                  <el-option
+                          v-for="(item,index) in cloudZones"
+                          :key="index"
+                          :label="item.cluster"
+                          :value="item.cluster">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-divider content-position="left">{{ $t("automatic.zone.datastore") }}</el-divider>
+              <el-form-item :label="$t('automatic.zone.datastore')" prop="cloudVars.datastore">
+                <el-select v-model="form.cloudVars.datastore"
+                           multiple style="width:100%"
+                           size="medium"
+                           filterable
+                           reserve-keyword>
+                  <el-option
+                          v-for="(item,index) in cloudDatastores"
+                          :key="index"
+                          :label="item.name"
+                          :value="item.name">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-divider content-position="left">{{ $t("automatic.zone.template") }}</el-divider>
+              <el-form-item :label="$t('automatic.zone.template_type')"
+                            prop="cloudVars.templateType">
+                <el-radio-group v-model="form.cloudVars.templateType">
+                  <el-radio label="default">{{ $t("automatic.zone.default") }}</el-radio>
+                  <el-radio label="customize">
+                    {{ $t("automatic.zone.customize") }}
+                  </el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <div v-if="form.cloudVars['templateType']==='default'">
+                <el-form-item :label="$t('automatic.zone.nfs_address')" prop="cloudVars.nfsAddress">
+                  <el-input v-model="form.cloudVars.nfsAddress"></el-input>
+                </el-form-item>
+                <el-form-item :label="$t('automatic.zone.nfs_port')" prop="cloudVars.nfsPort">
+                  <el-input-number v-model="form.cloudVars.nfsPort"></el-input-number>
+                </el-form-item>
+                <el-form-item :label="$t('automatic.zone.nfs_folder')" prop="cloudVars.nfsFolder">
+                  <el-input v-model="form.cloudVars.nfsFolder"></el-input>
+                </el-form-item>
+                <el-form-item :label="$t('automatic.zone.nfs_username')"
+                              prop="cloudVars.nfsUsername">
+                  <el-input v-model="form.cloudVars.nfsUsername"></el-input>
+                </el-form-item>
+                <el-form-item :label="$t('automatic.zone.nfs_password')"
+                              prop="cloudVars.nfsPassword">
+                  <el-input type="password" show-password v-model="form.cloudVars.nfsPassword"></el-input>
+                </el-form-item>
+              </div>
+              <div v-if="form.cloudVars['templateType']==='customize'">
+                <el-form-item :label="$t('automatic.zone.template')" prop="cloudVars.imageName">
+                  <el-select v-model="form.cloudVars.imageName"
+                             filterable
+                             reserve-keyword
+                             size="medium"
+                             @change="changeTemplate(form.cloudVars.imageName)">
+                    <el-option
+                            v-for="(item,index) in cloudZone.templates"
+                            :key="index"
+                            :label="item"
+                            :value="item">
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item :label="$t('credential.credential')" prop="credentialName">
+                  <el-select v-model="form.credentialName"
+                             filterable style="width:100%"
+                             size="medium"
+                             reserve-keyword>
+                    <el-option
+                            v-for="(item,index) in credentials"
+                            :key="index"
+                            :label="item.name"
+                            :value="item.name">
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item :label="$t('automatic.zone.port')" prop="cloudVars.port">
+                  <el-input v-model="form.cloudVars.port" type="number"></el-input>
+                </el-form-item>
+              </div>
+              <el-divider content-position="left">{{ $t("automatic.zone.network") }}</el-divider>
+              <el-form-item :label="$t('automatic.zone.switch')" prop="cloudVars.switch">
+                <el-select v-model="form.cloudVars.switch"
+                           filterable style="width:100%"
+                           reserve-keyword
+                           size="medium"
+                           @change="changeSwitch(form.cloudVars.switch)">
+                  <el-option
+                          v-for="(item,index) in cloudZone.switchs"
+                          :key="index"
+                          :label="item.name"
+                          :value="item.name">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item :label="$t('automatic.zone.portgroup')" prop="cloudVars.portgroup">
+                <el-select v-model="form.cloudVars.portgroup"
+                           filterable style="width:100%"
+                           size="medium"
+                           reserve-keyword>
+                  <el-option
+                          v-for="(item,index) in portgroups"
+                          :key="index"
+                          :label="item"
+                          :value="item">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item :label="$t('automatic.ip_pool.name')" prop="ipPoolName">
+                <el-select v-model="form.ipPoolName"
+                           filterable style="width:100%"
+                           size="medium"
+                           reserve-keyword
+                           @change="changeIpPool()">
+                  <el-option
+                          v-for="(item,index) in ipPools"
+                          :key="index"
+                          :label="item.name + ' (' +item.subnet + ')' + ' [ ' + item.ipUsed + ' / ' + item.ips.length + ' ]'"
+                          :value="item.name">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+            </div>
+            <el-form-item>
+              <div style="float: right">
+                <el-button @click="onCancel()">{{ $t("commons.button.cancel") }}</el-button>
+                <el-button type="primary" @click="onSubmit('form')" v-preventReClick>{{
+                    $t("commons.button.submit")
+                  }}
+                </el-button>
+              </div>
+            </el-form-item>
+          </el-form>
+        </div>
+      </el-col>
+    </el-row>
+  </layout-content>
+</template>
+
+<script>
+import LayoutContent from "@/components/layout/LayoutContent"
+import Rule from "@/utils/rules"
+import {listAllRegions} from "@/api/region"
+import {listCloudZones, listDatastores, listTemplates, createZone} from "@/api/zone"
+import {listAllCredentials} from "@/api/credentials"
+import {listAllIpPools} from "@/api/ip-pool"
+import {listTemplateConfigs} from "@/api/template-config"
+
+export const defaultValue = "default"
+export const customizeValue = "customize"
+export const templateValue = "template_config"
+
+export default {
+  name: "ZoneCreate",
+  components: { LayoutContent },
+  data () {
+    return {
+      templateTypes: [
+        {
+          label: this.$t("automatic.zone.customize"),
+          value: customizeValue
+        },
+        {
+          label: this.$t("automatic.zone.default"),
+          value: defaultValue
+        },
+        {
+          label: this.$t("automatic.zone.template_config"),
+          value: templateValue
+        }
+      ],
+      loading: false,
+      form: {
+        name: "",
+        regionName: "",
+        cloudVars: {
+          datastoreType: "value",
+          templateType: "customize",
+          resourceType: "resourcePool",
+          cluster: "",
+          imageName: "",
+          templateConfig: "",
+          storageType: "",
+          securityGroup: "",
+          network: "",
+          ipType: "",
+          subnet: "",
+          floatingNetwork: "",
+          switch: "",
+          portgroup: "",
+          nfsAddress: "",
+          nfsPort: "",
+          nfsFolder: "",
+          nfsUsername: "",
+          nfsPassword: "",
+          resourcePool: "",
+          port: "22"
+        },
+        credentialName: "",
+        ipPoolName: ""
+      },
+      regions: [],
+      cloudZoneRequest: {
+        cloudVars: {}
+      },
+      cloudZones: [],
+      region: {
+        regionVars: {}
+      },
+      cloudDatastores: [],
+      cloudZone: {
+        resourcePools: [],
+        networks: [],
+        storages: [],
+        securityGroups: [],
+        networkList: [],
+        ipType: [],
+        ipTypes: [],
+        floatingNetworkList: [],
+        switchs: [],
+        portgroups: [],
+        templates: [],
+        hosts: []
+      },
+      networks: [],
+      cloudTemplates: [],
+      credentials: [],
+      ipPools: [],
+      subnetList: [],
+      portgroups: [],
+      resourcePools: [],
+      rules: {
+        name: [Rule.LengthRule, Rule.NameRule],
+        regionName: [Rule.SelectRequiredRule],
+        cloudVars: {
+          cluster: [Rule.SelectRequiredRule],
+          datastore: [Rule.SelectRequiredRule],
+          resourcePool: [Rule.SelectRequiredRule],
+          templateType: [Rule.SelectRequiredRule],
+          datastoreType: [Rule.SelectRequiredRule],
+          imageName: [Rule.SelectRequiredRule],
+          templateConfig: [Rule.SelectRequiredRule],
+          network: [Rule.SelectRequiredRule],
+          storageType: [Rule.SelectRequiredRule],
+          securityGroup: [Rule.SelectRequiredRule],
+          ipType: [Rule.SelectRequiredRule],
+          subnet: [Rule.SelectRequiredRule],
+          floatingNetwork: [Rule.SelectRequiredRule],
+          switch: [Rule.SelectRequiredRule],
+          portgroup: [Rule.SelectRequiredRule],
+          nfsAddress: [Rule.RequiredRule],
+          nfsPort: [Rule.RequiredRule],
+          nfsUsername: [Rule.RequiredRule],
+          nfsPassword: [Rule.RequiredRule],
+          port: [Rule.RequiredRule],
+          hostSystem: [Rule.SelectRequiredRule],
+          resource: [Rule.SelectRequiredRule],
+        },
+        credentialName: [Rule.SelectRequiredRule],
+        ipPoolName: [Rule.SelectRequiredRule],
+      },
+      currentPool: {
+        ips: [],
+        ipUsed: 0
+      },
+      templateConfigs: []
+    }
+  },
+  methods: {
+    changeRegion (regionName) {
+      this.regions.forEach(region => {
+        if (region.name === regionName) {
+          this.region = region
+          this.cloudZoneRequest.cloudVars = JSON.parse(region.vars)
+          this.cloudZoneRequest.cloudVars["datacenter"] = region.datacenter
+          this.loading = true
+          listCloudZones(this.cloudZoneRequest).then(res => {
+            this.cloudZones = res.result
+            if (this.region.regionVars["provider"] === "vSphere") {
+              this.resourcePools = this.cloudZones[0].resourcePools
+            }
+            this.loading = false
+          })
+          this.changeTemplateType(this.form.cloudVars.templateType)
+        }
+      })
+    },
+    changeCloudZone (cluster) {
+      this.cloudZones.forEach(item => {
+        if (item.cluster === cluster) {
+          this.cloudZone = item
+        }
+      })
+      this.cloudZoneRequest.cloudVars["cluster"] = cluster
+      this.form.cloudVars.resourcePool = ""
+      this.form.cloudVars.hostSystem = ""
+      this.form.cloudVars.datastore = []
+      this.form.cloudVars.network = ""
+      this.form.cloudVars.resource = ""
+      this.cloudDatastores = []
+      this.networks = []
+      if (this.region.regionVars["provider"] !== "vSphere") {
+        this.loading = true
+        listDatastores(this.cloudZoneRequest).then(res => {
+          this.cloudDatastores = res
+          this.loading = false
+        })
+      } else {
+        if (this.form.cloudVars.resourceType === "resourcePool") {
+          this.cloudDatastores = this.cloudZone.datastores
+          this.networks = this.cloudZone.networks
+        }
+      }
+    },
+    changeResourcePool () {
+      if (this.region.regionVars["provider"] === "vSphere") {
+        this.cloudZone = this.cloudZones[0]
+        this.cloudDatastores = this.cloudZone.datastores
+        this.networks = this.cloudZone.networks
+      }
+    },
+    changeHost (host) {
+      if (host === "Any") {
+        this.form.cloudVars.resourceType = "resourcePool"
+      } else {
+        this.form.cloudVars.resourceType = "host"
+      }
+    },
+    changeTemplateType (type) {
+      if (type === defaultValue) {
+        return
+      }
+      this.form.cloudVars.imageName = ""
+      this.loading = true
+      if (type === customizeValue) {
+        listTemplates(this.cloudZoneRequest).then(res => {
+          this.cloudTemplates = res.result
+        }).finally(() => {
+          this.loading = false
+        })
+      }
+      if (type === templateValue) {
+        listTemplateConfigs().then(res => {
+          this.templateConfigs = res.items
+        }).finally(() => {
+          this.loading = false
+        })
+      }
+    },
+    changeTemplate (imageName) {
+      this.cloudTemplates.forEach(template => {
+        if (template.imageName === imageName) {
+          this.form.cloudVars["imageDisks"] = template.imageDisks
+        }
+      })
+    },
+    changeTemplateConfig (configName) {
+      this.templateConfigs.forEach(template => {
+        if (template.name === configName) {
+          this.form.cloudVars["imageName"] = template.config.name
+        }
+      })
+    },
+    changeNetwork (networkName) {
+      this.form.cloudVars.subnet = ""
+      this.form.cloudVars.floatingNetwork = ""
+      this.cloudZone.networkList.forEach(network => {
+        if (network.name === networkName) {
+          this.subnetList = network.subnetList
+        }
+      })
+    },
+    changeSwitch (switchName) {
+      this.cloudZone.switchs.forEach(sw => {
+        if (sw.name === switchName) {
+          this.portgroups = sw.portgroups
+        }
+      })
+    },
+    onSubmit (formName) {
+      this.$refs[formName].validate((valid) => {
+        if (!valid) {
+          return false
+        }
+        this.loading = true
+        createZone(this.form).then(() => {
+          this.loading = false
+          this.$message({
+            type: "success",
+            message: this.$t("commons.msg.create_success")
+          })
+          this.$router.push({ name: "ZoneList" })
+        }).finally(() => {
+          this.loading = false
+        })
+      })
+    },
+    onCancel () {
+      this.$router.push({ name: "ZoneList" })
+    },
+    changeIpPool () {
+      for (const p of this.ipPools) {
+        if (this.form.ipPoolName === p.name) {
+          this.currentPool = p
+          break
+        }
+      }
+    },
+  },
+  created () {
+    listAllRegions().then(data => {
+      this.regions = data.items
+    })
+    listAllCredentials().then(data => {
+      this.credentials = data.items
+    })
+    listAllIpPools().then(data => {
+      this.ipPools = data.items
+    })
+  }
+}
+</script>
+
+<style scoped>
+
+</style>
